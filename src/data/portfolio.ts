@@ -3,7 +3,7 @@ import type { Project, ContactLink, SkillGroup } from "../types/index.type";
 export const skillGroups: SkillGroup[] = [
   {
     category: "Languages",
-    items: ["Python", "Java", "TypeScript", "JavaScript", "C++"],
+    items: ["TypeScript", "JavaScript", "Python", "Java", "C++"],
   },
   {
     category: "Backend",

@@ -302,6 +302,11 @@ ul {
   color: var(--text-muted);
 }
 
+.skills__tag:hover {
+  color: #1640b0;
+  transform: rotateX(10deg) rotateY(-10deg) scale(1.05);
+  box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.2);
+}
 /* Projects */
 
 .projects__grid {
@@ -547,6 +552,50 @@ ul {
 
 /* Responsive */
 
+html,
+body {
+  overflow-x: hidden;
+  width: 100%;
+}
+
+body {
+  min-height: 100vh;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+@media (max-width: 900px) {
+  .navbar {
+    padding: 16px 20px;
+  }
+
+  .hero {
+    min-height: 88svh;
+    align-items: flex-start;
+    padding-top: 24px;
+  }
+
+  .hero__content {
+    transform: none;
+    padding: 0 20px;
+    max-width: 100%;
+  }
+
+  .hero__name {
+    line-height: 1.05;
+  }
+
+  .hero__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .hero__actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
 @media (max-width: 720px) {
   .navbar__links {
     display: none;
@@ -554,5 +603,88 @@ ul {
 
   .section {
     padding: 64px 20px;
+  }
+
+  .section__title {
+    margin-bottom: 28px;
+  }
+
+  .skills__grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .projects__grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .project-card {
+    padding: 20px;
+  }
+
+  .project-card__header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .contact__link {
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 4px;
+  }
+
+  .contact__value {
+    font-size: 14px;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+  }
+
+  .footer {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 24px 20px;
+  }
+
+  .footer__links {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .section {
+    padding: 56px 16px;
+  }
+
+  .navbar {
+    padding: 14px 16px;
+  }
+
+  .hero__prompt {
+    font-size: 12px;
+    margin-bottom: 14px;
+  }
+
+  .hero__name {
+    font-size: clamp(32px, 10vw, 42px);
+  }
+
+  .hero__role {
+    font-size: 16px;
+  }
+
+  .hero__location {
+    margin-bottom: 24px;
+  }
+
+  .btn {
+    padding: 11px 18px;
+    font-size: 13px;
+  }
+
+  .project-card__description,
+  .project-card__highlights li {
+    font-size: 12px;
   }
 }

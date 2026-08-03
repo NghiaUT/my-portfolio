@@ -6,6 +6,8 @@ import { TECH_ICONS } from '../data/portfolio';
 interface RingConfig {
     a: number; // semi-major axis (local units)
     b: number; // semi-minor axis (local units)
+    rotX: number; // rotation on axis X
+    rotY: number; // rotation on axis Y
     rotZ: number; // in-plane rotation, staggers the ellipses atom-style
     tiltX: number; // slight tilt for 3D depth as the atom turns
     speed: number; // radians/sec, sign controls direction
@@ -13,9 +15,9 @@ interface RingConfig {
 }
 
 const RING_CONFIGS: RingConfig[] = [
-    { a: 1.0, b: 0.38, rotZ: 0, tiltX: THREE.MathUtils.degToRad(14), speed: 0.32, techIndexes: [0, 1, 2, 3] },
-    { a: 1.2, b: 0.45, rotZ: THREE.MathUtils.degToRad(60), tiltX: THREE.MathUtils.degToRad(14), speed: -0.26, techIndexes: [4, 5, 6, 7] },
-    { a: 1.4, b: 0.52, rotZ: THREE.MathUtils.degToRad(-60), tiltX: THREE.MathUtils.degToRad(14), speed: 0.2, techIndexes: [8, 9, 10, 11] },
+    { a: 1.0, b: 0.38, rotX: THREE.MathUtils.degToRad(15), rotY: 0, rotZ: 0, tiltX: THREE.MathUtils.degToRad(14), speed: 0.32, techIndexes: [0, 1, 2, 3] },
+    { a: 1.2, b: 0.45, rotX: THREE.MathUtils.degToRad(-15), rotY: THREE.MathUtils.degToRad(60), rotZ: THREE.MathUtils.degToRad(60), tiltX: THREE.MathUtils.degToRad(14), speed: -0.26, techIndexes: [4, 5, 6, 7] },
+    { a: 1.4, b: 0.52, rotX: THREE.MathUtils.degToRad(22), rotY: THREE.MathUtils.degToRad(-60), rotZ: THREE.MathUtils.degToRad(-60), tiltX: THREE.MathUtils.degToRad(14), speed: 0.2, techIndexes: [8, 9, 10, 11] },
 ];
 
 const NUCLEUS_RADIUS = 0.22;
@@ -109,13 +111,47 @@ export default function Hero() {
         renderer.setSize(width, height);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
+        const disposables: Array<{ dispose: () => void }> = [];
+        /** ================== Adding Stars Background */
+        const starsCount = 1400;
+        const positions = new Float32Array(starsCount * 3);
+
+        for (let i = 0; i < starsCount; i++) {
+            let x, y, z;
+
+            do {
+                x = THREE.MathUtils.randFloatSpread(150);
+                y = THREE.MathUtils.randFloatSpread(150);
+                z = THREE.MathUtils.randFloatSpread(150);
+            } while (Math.sqrt(x * x + y * y + z * z) < 15);
+
+            positions[i * 3] = x;
+            positions[i * 3 + 1] = y;
+            positions[i * 3 + 2] = z;
+        }
+
+        const starsGeometry = new THREE.BufferGeometry();
+        starsGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+        const starColor = isDark ? 0xffffff : 0xc0c0c0;
+        const starsMaterial = new THREE.PointsMaterial({
+            color: starColor,
+            size: 0.12 + 0.1 * Math.random(),
+            transparent: true,
+            opacity: isDark ? 0.7 : 0.8,
+            sizeAttenuation: true,
+        });
+
+        const stars = new THREE.Points(starsGeometry, starsMaterial);
+        scene.add(stars);
+        disposables.push(starsGeometry, starsMaterial);
+        // ==========================================
+
         // The whole atom is built at unit scale, then scaled to fill the
         // viewport based on the camera's visible frustum at its depth — this
         // is what keeps it "big and encompassing" across any screen size.
         const atomGroup = new THREE.Group();
         scene.add(atomGroup);
-
-        const disposables: Array<{ dispose: () => void }> = [];
 
         // Nucleus + glow
         const glowTexture = createGlowTexture(glowColor);
@@ -153,8 +189,10 @@ export default function Hero() {
 
         RING_CONFIGS.forEach((ring) => {
             const pivot = new THREE.Group();
+            pivot.rotation.x = ring.rotX;
             pivot.rotation.z = ring.rotZ;
-            pivot.rotation.x = ring.tiltX;
+
+            pivot.rotation.order = 'ZYX';
             atomGroup.add(pivot);
             ringPivots.push(pivot);
 
@@ -162,12 +200,15 @@ export default function Hero() {
                 .getPoints(64)
                 .map((p) => new THREE.Vector3(p.x, p.y, 0));
             const ringGeometry = new THREE.BufferGeometry().setFromPoints(curvePoints);
-            const ringMaterial = new THREE.LineBasicMaterial({
+            const ringMaterial = new THREE.LineDashedMaterial({
                 color: accentColor,
                 transparent: true,
                 opacity: 0.3,
+                dashSize: 0.05,
+                gapSize: 0.03,
             });
             const ringLine = new THREE.LineLoop(ringGeometry, ringMaterial);
+            ringLine.computeLineDistances();
             pivot.add(ringLine);
             disposables.push(ringGeometry, ringMaterial);
 
@@ -208,7 +249,7 @@ export default function Hero() {
 
             atomGroup.position.x =
                 Math.min(visibleWidth, visibleHeight) *
-                (aspect > 1 ? 0.42 : 0.08);      // đẩy sang phải nhiều hơn
+                (aspect > 1 ? 0.48 : 0.08);      // đẩy sang phải nhiều hơn
 
             atomGroup.position.y = -0.1;         // hạ xuống nhẹ nếu cần
         };
@@ -223,13 +264,17 @@ export default function Hero() {
             window.addEventListener('mousemove', handleMouseMove);
         }
 
-        const clock = new THREE.Clock();
+        const timer = new THREE.Timer();
         let frameId: number;
 
-        const animate = () => {
-            const delta = clock.getDelta();
+        const animate = (timestamp: number) => {
+            timer.update(timestamp);
+            const delta = timer.getDelta();
 
             if (!prefersReducedMotion) {
+                stars.rotation.y += 0.015 * delta;
+                stars.rotation.z -= 0.005 * delta;
+
                 atomGroup.rotation.y += 0.09 * delta;
                 atomGroup.rotation.x += (mouse.y * 0.1 - atomGroup.rotation.x) * 0.02;
 
@@ -250,7 +295,7 @@ export default function Hero() {
 
             renderer.render(scene, camera);
         };
-        animate();
+        animate(0);
 
         const handleResize = () => applyResponsiveScale();
         window.addEventListener('resize', handleResize);
@@ -274,8 +319,7 @@ export default function Hero() {
                 </p>
                 <h1 className="hero__name">Trọng Nghĩa</h1>
                 <p className="hero__role">
-                    Final-year Computer Science student at HCMUT (BKU) — building backend
-                    systems and the APIs that hold them together.
+                    Final-year Computer Science student at HCMUT (BKU) — building full-stack applications and scalable backend systems.
                 </p>
                 <p className="hero__location">Ho Chi Minh City, Vietnam</p>
 
